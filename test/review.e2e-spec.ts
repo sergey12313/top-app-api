@@ -15,6 +15,11 @@ const reviewDataDto: CreateReviewDto = {
   rating: 4,
   productId,
 };
+const failDataDto: Omit<CreateReviewDto, 'title'> = {
+  description: 'Тестовое описание',
+  rating: 4,
+  productId,
+};
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -30,7 +35,14 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/review/create (POST)', async () => {
+  it('/review/create (POST) fail', async () => {
+    return request(app.getHttpServer())
+      .post('/review/create')
+      .send(failDataDto)
+      .expect(400);
+  });
+
+  it('/review/create (POST) succes', async () => {
     return request(app.getHttpServer())
       .post('/review/create')
       .send(reviewDataDto)
