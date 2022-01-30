@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { CreateReviewDto } from 'src/review/dto/create-review.dto';
 import { disconnect, Types } from 'mongoose';
 import { REVIEW_NOT_FOUND } from '../src/review/review.constants';
+import { LOGIN_DTO } from './test.constant';
 
 const productId = new Types.ObjectId().toHexString();
 const randomId = new Types.ObjectId().toHexString();
@@ -21,10 +22,11 @@ const failDataDto: Omit<CreateReviewDto, 'title'> = {
   productId,
 };
 
-describe('AppController (e2e)', () => {
+describe('ReviewController (e2e)', () => {
   let app: INestApplication;
   let createdId: string;
   let productId: string;
+  let token: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -33,6 +35,12 @@ describe('AppController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send(LOGIN_DTO)
+      .then(({ body: { access_token } }) => {
+        token = access_token;
+      });
   });
 
   it('/review/create (POST) fail', async () => {
@@ -58,7 +66,6 @@ describe('AppController (e2e)', () => {
       .get('/review/byProduct/' + productId)
       .expect(200)
       .then(({ body }: request.Response) => {
-        console.log(body);
         expect(body.length).toBe(1);
       });
   });
@@ -75,6 +82,7 @@ describe('AppController (e2e)', () => {
   it('/review/:id (DELETE) success', async () => {
     return request(app.getHttpServer())
       .delete('/review/' + createdId)
+      .set('Authorization', 'Bearer ' + token)
       .expect(200)
       .then(({ body }: request.Response) => {
         createdId = body._id;
@@ -85,10 +93,17 @@ describe('AppController (e2e)', () => {
   it('/review/:id (DELETE) fail', async () => {
     return request(app.getHttpServer())
       .delete('/review/' + createdId)
+      .set('Authorization', 'Bearer ' + token)
       .expect(404)
       .then(({ body }: request.Response) => {
         expect(body?.message).toEqual(REVIEW_NOT_FOUND);
       });
+  });
+
+  it('/review/:id (DELETE) fail without auth', async () => {
+    return request(app.getHttpServer())
+      .delete('/review/' + createdId)
+      .expect(401);
   });
 
   afterAll(() => {
