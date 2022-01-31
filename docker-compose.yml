@@ -7,8 +7,24 @@ services:
     environment: 
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=admin
+    networks: 
+      - top-api-network
     ports:
       - 27017:27017
     volumes:
       - ./mongo-data:/data/db
     command: --wiredTigerCacheSizeGB 1.5
+  top.api:
+    build: .
+    container_name: top-api
+    command: npm run start:prod
+    restart: always
+    networks: 
+      - top-api-network
+    depends_on: 
+      - mongo
+    ports: 
+      - "3000:3000"
+networks: 
+  top-api-network:
+    driver: bridge
