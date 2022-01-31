@@ -9,9 +9,11 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { IdValidationPipe } from 'src/pipes/id-validation.pipe';
 import { CreateProductDto } from './dto/create-product.dto';
 import { FindProductDto } from './dto/find-product.dto';
@@ -20,17 +22,19 @@ import { ProductService } from './product.service';
 
 @Controller('product')
 export class ProductController {
-  constructor(private readonly prductService: ProductService) {}
+  constructor(private readonly productService: ProductService) {}
 
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe())
   @Post('create')
   async create(@Body() dto: CreateProductDto) {
-    return this.prductService.create(dto);
+    return this.productService.create(dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async get(@Param('id', IdValidationPipe) id: string) {
-    const product = await this.prductService.findById(id);
+    const product = await this.productService.findById(id);
 
     if (!product) {
       throw new HttpException(PRODUCT_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
@@ -38,9 +42,10 @@ export class ProductController {
     return product;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async delete(@Param('id', IdValidationPipe) id: string) {
-    const product = await this.prductService.deleteById(id);
+    const product = await this.productService.deleteById(id);
 
     if (!product) {
       throw new HttpException(PRODUCT_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
@@ -53,7 +58,7 @@ export class ProductController {
     @Param('id', IdValidationPipe) id: string,
     @Body() dto: CreateProductDto,
   ) {
-    const product = await this.prductService.updateById(id, dto);
+    const product = await this.productService.updateById(id, dto);
 
     if (!product) {
       throw new HttpException(PRODUCT_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
@@ -65,6 +70,6 @@ export class ProductController {
   @HttpCode(200)
   @Post('find')
   async find(@Body() dto: FindProductDto) {
-    return this.prductService.findWithReviews(dto);
+    return this.productService.findWithReviews(dto);
   }
 }
